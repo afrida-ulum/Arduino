@@ -1,0 +1,88 @@
+#include "ThingsBoard.h"
+#include <dht11.h>
+
+#define DHT11PIN 15
+dht11 DHT11;
+int sensor_pin = 34;
+int kelembaban_tanah ;
+String indikator_kelembaban_tanah;
+float t;
+float h;
+#define waterPumpPin 32
+
+//const int potentioPin = 32;
+//const int ldrPin = 33;
+////const int lm35Pin = 34;
+//#ifdef __cplusplus
+//  extern "C" {
+// #endif
+//
+//  uint8_t temprature_sens_read();
+//
+//#ifdef __cplusplus
+//}
+//#endif
+//
+//uint8_t temprature_sens_read();
+//
+//int potentioValue;
+//int ldrValue;
+//float suhu;
+////int lm35Value;
+////float nilai;
+////float suhu;
+//String indikator_suhu;
+//
+
+void setup() {
+  pinMode(sensor_pin, INPUT);
+  pinMode(waterPumpPin, OUTPUT);
+  thingsboard_Init();
+  Serial.begin(115200);
+}
+
+void loop()
+{
+  String data;
+  const size_t bufferSize = JSON_OBJECT_SIZE(3);
+  DynamicJsonBuffer jsonBuffer(bufferSize);
+  JsonObject& root = jsonBuffer.createObject();
+  int chk = DHT11.read(DHT11PIN);
+  //  Serial.print(chk);
+  h = ((float)DHT11.humidity);
+  Serial.print("Humidity (%): ");
+  Serial.println(h);
+  Serial.print("Temperature (C): ");
+  t = ((float)DHT11.temperature);
+  Serial.println(t);
+  //  Serial.println((float)DHT11.temperature, 15);
+  kelembaban_tanah = analogRead(sensor_pin);
+  kelembaban_tanah = map(kelembaban_tanah, 0, 4095, 0, 100);
+  Serial.print("Moisture : ");
+  Serial.print(kelembaban_tanah);
+  Serial.print("% \t");
+  Serial.print("Status : ");
+  Serial.println(indikator_kelembaban_tanah);
+  delay(1000);
+
+  if (kelembaban_tanah > 80) {
+    indikator_kelembaban_tanah = "Siram Aku";
+    digitalWrite(waterPumpPin, LOW);
+  } else if (kelembaban_tanah >= 60 && kelembaban_tanah <= 80) {
+    indikator_kelembaban_tanah =  "baik baik aja";
+  } else if (kelembaban_tanah < 60) {
+    indikator_kelembaban_tanah = "jangan siram please";
+    digitalWrite(waterPumpPin, HIGH );
+    delay(1000);
+  }
+
+//  root ["Room's temp and hum"] = String (t) + " (C) " + String (h) + " (%) ";
+//  root["Temperature (C)"] = String (t) ;
+  //  root["Humidity (%)"] = String (h) ;
+  root["moisture (%) "] = String(kelembaban_tanah);
+  root ["indikator"] = String(indikator_kelembaban_tanah);
+
+  root.printTo(data);
+  thingsboard_Publish(data);
+  client.loop();
+}
