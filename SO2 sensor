@@ -1,0 +1,24 @@
+#include <movingAvg.h>                  
+
+const SO2_PIN(A0);       
+movingAvg SO2(10);              
+
+void setup()
+{
+    pinMode(SO2, INPUT_PULLUP);
+    Serial.begin(115200);
+    photoCell.begin();
+}
+
+void loop()
+{
+    int SO = analogRead(SO2_PIN); 
+    float getVoltage = SO*5.0/1023.0;
+    //
+    float avg = SO2.reading(getVoltage);    
+    //Serial.print("Tegangan Sensor = ");
+    Serial.println(getVoltage);                   
+    //Serial.print("    Average =  ");
+    //Serial.println(avg);                
+    delay(500);
+}
